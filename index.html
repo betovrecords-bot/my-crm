@@ -139,9 +139,6 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         #sync-status { font-size: 10px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.1); color: var(--text-secondary); margin-right: 10px; }
-        #sync-status.active { background: rgba(48, 209, 88, 0.2); color: var(--green); border: 1px solid rgba(48, 209, 88, 0.3); }
-        .btn-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(0, 122, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); } }
     </style>
 </head>
 <body>
@@ -150,8 +147,7 @@
     <header>
         <h1>Betov Records <span>CRM</span></h1>
         <div style="display: flex; align-items: center; gap: 8px;">
-            <span id="sync-status">Синхронизация выкл.</span>
-            <button class="cal-sel-btn btn-pulse" id="mainSyncBtn" onclick="connectFile()">Включить базу</button>
+            <span id="sync-status">Загрузка базы...</span>
             <button class="cal-sel-btn" onclick="exportData()">Экспорт</button>
             <button class="cal-sel-btn" onclick="document.getElementById('imp').click()">Импорт</button>
             <input type="file" id="imp" style="display:none" onchange="importData(event)">
@@ -169,7 +165,7 @@
         <div class="analytics-grid">
             <div class="kpi-card"><div class="kpi-label">Оборот</div><div class="kpi-value" id="mTotal">0 ₴</div></div>
             <div class="kpi-card"><div class="kpi-label">Ассистент</div><div class="kpi-value" id="mAssist" style="color:var(--orange)">0 ₴</div></div>
-            <div class="kpi-card"><div class="kpi-label">Прибыль</div><div class="kpi-value" id="mProfit" style="color:var(--green)">0 ₴</div></div>
+            <div class="kpi-card"><div class="kpi-card"><div class="kpi-label">Прибыль</div><div class="kpi-value" id="mProfit" style="color:var(--green)">0 ₴</div></div></div>
             <div class="kpi-card"><div class="kpi-label">Проектов</div><div class="kpi-value" id="mCount">0</div></div>
         </div>
         <div class="content-block">
@@ -225,113 +221,44 @@
 </div>
 
 <script>
-    // Подгружаем библиотеку IndexedDB (библиотеку не надо, сделаем нативно)
     let projects = JSON.parse(localStorage.getItem('betov_db')) || [];
-    let fileHandle = null;
     const months = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
 
-    // При загрузке проверяем, был ли у нас файл раньше
+    // АВТОМАТИЧЕСКАЯ ЗАГРУЗКА БАЗЫ ПРИ СТАРТЕ
     window.onload = async () => {
         document.getElementById('pDate').valueAsDate = new Date();
         initSelectors();
-        render();
         
-        // Пытаемся восстановить доступ к файлу из "быстрой памяти"
-        const savedHandle = await getSavedHandle();
-        if (savedHandle) {
-            document.getElementById('mainSyncBtn').innerText = "Подключить " + savedHandle.name;
-        }
-    };
-
-    // --- ФУНКЦИИ УМНОЙ ПАМЯТИ ---
-    async function saveHandleToMemory(handle) {
-        // Сохраняем "ссылку" на файл в системную базу браузера
-        const db = await openDB();
-        const tx = db.transaction('handles', 'readwrite');
-        tx.objectStore('handles').put(handle, 'last_file');
-    }
-
-    async function getSavedHandle() {
-        const db = await openDB();
-        return new Promise(res => {
-            const req = db.transaction('handles').objectStore('handles').get('last_file');
-            req.onsuccess = () => res(req.result);
-            req.onerror = () => res(null);
-        });
-    }
-
-    function openDB() {
-        return new Promise(res => {
-            const req = indexedDB.open('FileStore', 1);
-            req.onupgradeneeded = () => req.result.createObjectStore('handles');
-            req.onsuccess = () => res(req.result);
-        });
-    }
-
-    // --- ЛОГИКА СИНХРОНИЗАЦИИ ---
-    async function connectFile() {
         try {
-            // Если в памяти есть ссылка, пытаемся открыть её сразу
-            const savedHandle = await getSavedHandle();
-            
-            if (savedHandle) {
-                // Просим разрешение на чтение/запись (это единственный клик)
-                if (await savedHandle.requestPermission({mode: 'readwrite'}) === 'granted') {
-                    fileHandle = savedHandle;
+            const response = await fetch('db.json');
+            if (response.ok) {
+                const cloudData = await response.json();
+                if (cloudData && cloudData.length > 0) {
+                    projects = cloudData;
+                    saveLocally();
                 }
+                document.getElementById('sync-status').innerText = "База подключена (Облако)";
+            } else {
+                document.getElementById('sync-status').innerText = "Локальный режим";
             }
-
-            // Если ссылки нет или доступ не дали — открываем Finder
-            if (!fileHandle) {
-                [fileHandle] = await window.showOpenFilePicker({
-                    types: [{ description: 'JSON Database', accept: {'application/json': ['.json']} }],
-                    multiple: false
-                });
-                await saveHandleToMemory(fileHandle);
-            }
-
-            const file = await fileHandle.getFile();
-            const contents = await file.text();
-            if (contents) {
-                projects = JSON.parse(contents);
-                saveLocally();
-                render();
-            }
-
-            const status = document.getElementById('sync-status');
-            const btn = document.getElementById('mainSyncBtn');
-            status.innerText = "● База: " + fileHandle.name;
-            status.classList.add('active');
-            btn.innerText = "Обновить связь";
-            btn.classList.remove('btn-pulse');
-
-        } catch (e) { console.log("Отмена"); }
-    }
-
-    async function writeToFile() {
-        if (!fileHandle) return;
-        try {
-            const writable = await fileHandle.createWritable();
-            await writable.write(JSON.stringify(projects, null, 2));
-            await writable.close();
-        } catch (e) { 
-            console.error("Ошибка записи:", e);
-            document.getElementById('sync-status').innerText = "Ошибка записи!";
-            document.getElementById('sync-status').classList.remove('active');
-            document.getElementById('mainSyncBtn').classList.add('btn-pulse');
+        } catch (e) {
+            console.log("Ошибка автозагрузки, работаем локально");
+            document.getElementById('sync-status').innerText = "Локальный режим";
         }
-    }
+        
+        render();
+    };
 
     function save() {
         saveLocally();
-        writeToFile();
+        // Примечание: на GitHub Pages запись в файл db.json невозможна через JS.
+        // Изменения сохраняются только в браузере (LocalStorage).
     }
 
     function saveLocally() {
         localStorage.setItem('betov_db', JSON.stringify(projects));
     }
 
-    // --- ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ ---
     function initSelectors() {
         const curY = new Date().getFullYear();
         const curM = new Date().getMonth();

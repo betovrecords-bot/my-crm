@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betov Records CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: rgba(28, 28, 30, 0.7);
+            --surface-bright: rgba(44, 44, 46, 0.8);
+            --accent: #007AFF;
+            --text: #ffffff;
+            --text-secondary: #8E8E93;
+            --divider: rgba(255, 255, 255, 0.1);
+            --green: #30D158;
+            --orange: #FF9F0A;
+            --red: #FF453A;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% -20%, #1c1c1e 0%, #000 70%);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        
+        h1 { font-size: 28px; font-weight: 700; margin: 0; color: #ffffff; }
+        h1 span { color: var(--accent); font-weight: 700; }
+
+        .cal-sel-btn { 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid var(--divider); 
+            color: white; 
+            padding: 8px 16px; 
+            border-radius: 10px; 
+            outline: none; 
+            font-size: 13px; 
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .cal-sel-btn:hover { 
+            background: rgba(255, 255, 255, 0.12); 
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .nav {
+            display: flex; background: rgba(120, 120, 128, 0.24);
+            padding: 4px; border-radius: 12px; width: fit-content;
+            margin-bottom: 30px; gap: 4px;
+        }
+
+        .nav button {
+            background: transparent; border: none; color: var(--text); padding: 8px 18px;
+            border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s;
+        }
+
+        .nav button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav button.active { background: rgba(255, 255, 255, 0.2); }
+
+        .analytics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+        .kpi-card { background: var(--surface); padding: 20px; border-radius: 18px; border: 1px solid var(--divider); backdrop-filter: blur(20px); }
+        .kpi-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px; }
+        .kpi-value { font-size: 22px; font-weight: 700; }
+
+        .content-block { background: var(--surface); border-radius: 18px; border: 1px solid var(--divider); overflow: hidden; margin-bottom: 30px; }
+        .block-header { padding: 16px 24px; border-bottom: 1px solid var(--divider); display: flex; justify-content: space-between; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 14px 24px; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
+        td { padding: 14px 24px; border-bottom: 1px solid var(--divider); font-size: 14px; }
+        
+        tbody tr { transition: background 0.2s; }
+        tbody tr:hover { background: rgba(255, 255, 255, 0.05); }
+
+        .td-project { color: #ffffff; font-weight: 600; letter-spacing: -0.2px; }
+        .td-price { color: var(--accent); font-weight: 500; font-family: 'Inter', monospace; }
+        .td-deadline { color: var(--text-secondary); font-size: 13px; }
+
+        .project-name { cursor: help; position: relative; }
+        .project-name:hover::after {
+            content: "Ассистент: " attr(data-assist) " ₴";
+            position: absolute;
+            left: 0;
+            bottom: 100%;
+            background: var(--surface-bright);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            border: 1px solid var(--divider);
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .status-select { background: none; border: none; color: white; font-weight: 600; outline: none; cursor: pointer; }
+        .cal-sel { background: var(--surface); border: 1px solid var(--divider); color: white; padding: 6px 10px; border-radius: 8px; outline: none; font-size: 13px; }
+
+        .premium-form { padding: 32px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-left: 4px; }
+        .input-group input { 
+            background: rgba(255,255,255,0.05); padding: 14px; border-radius: 12px; 
+            border: 1px solid var(--divider); color: white; font-size: 14px; outline: none; transition: 0.2s;
+        }
+        .input-group input:focus { border-color: var(--accent); background: rgba(255,255,255,0.08); }
+        
+        .btn-action { 
+            background: var(--accent); color: white; border: none; padding: 16px; 
+            border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 10px;
+        }
+        .btn-action:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .calendar-day { background: var(--surface); border: 1px solid var(--divider); border-radius: 12px; min-height: 100px; padding: 10px; }
+        .day-num { font-weight: 700; font-size: 13px; margin-bottom: 8px; display: block; opacity: 0.5; }
+        
+        .is-today .day-num { color: var(--accent); opacity: 1; font-weight: 800; }
+
+        .event { font-size: 9px; padding: 3px 6px; border-radius: 4px; margin-bottom: 4px; font-weight: 600; }
+
+        .search-bar { width: 100%; padding: 16px 24px; background: var(--surface); border-radius: 16px; border: 1px solid var(--divider); margin-bottom: 24px; color: white; outline: none; }
+        .btn-del { color: var(--red); background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.4; }
+
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #sync-status { font-size: 10px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.1); color: var(--text-secondary); margin-right: 10px; }
+        #sync-status.active { background: rgba(48, 209, 88, 0.2); color: var(--green); border: 1px solid rgba(48, 209, 88, 0.3); }
+        .btn-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(0, 122, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Betov Records <span>CRM</span></h1>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="sync-status">Синхронизация выкл.</span>
+            <button class="cal-sel-btn btn-pulse" id="mainSyncBtn" onclick="connectFile()">Включить базу</button>
+            <button class="cal-sel-btn" onclick="exportData()">Экспорт</button>
+            <button class="cal-sel-btn" onclick="document.getElementById('imp').click()">Импорт</button>
+            <input type="file" id="imp" style="display:none" onchange="importData(event)">
+        </div>
+    </header>
+
+    <div class="nav">
+        <button onclick="showTab('reports')" id="btn-reports" class="active">Отчеты</button>
+        <button onclick="showTab('calendar')" id="btn-calendar">Календарь</button>
+        <button onclick="showTab('archive')" id="btn-archive">BI & Архив</button>
+        <button onclick="showTab('add')" id="btn-add">Новый проект</button>
+    </div>
+
+    <div id="sec-reports" class="section active">
+        <div class="analytics-grid">
+            <div class="kpi-card"><div class="kpi-label">Оборот</div><div class="kpi-value" id="mTotal">0 ₴</div></div>
+            <div class="kpi-card"><div class="kpi-label">Ассистент</div><div class="kpi-value" id="mAssist" style="color:var(--orange)">0 ₴</div></div>
+            <div class="kpi-card"><div class="kpi-label">Прибыль</div><div class="kpi-value" id="mProfit" style="color:var(--green)">0 ₴</div></div>
+            <div class="kpi-card"><div class="kpi-label">Проектов</div><div class="kpi-value" id="mCount">0</div></div>
+        </div>
+        <div class="content-block">
+            <div class="block-header">
+                <div style="display:flex; gap:10px;">
+                    <select id="fMonth" onchange="render()" class="cal-sel"></select>
+                    <select id="fYear" onchange="render()" class="cal-sel"></select>
+                </div>
+            </div>
+            <table>
+                <thead><tr><th>Проект</th><th>Чек</th><th>Дедлайн</th><th>Статус</th><th></th></tr></thead>
+                <tbody id="mTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="sec-calendar" class="section">
+        <div style="display:flex; justify-content: center; gap:10px; margin-bottom: 20px;">
+            <select id="calMonthSel" class="cal-sel" onchange="renderCalendar()"></select>
+            <select id="calYearSel" class="cal-sel" onchange="renderCalendar()"></select>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <div id="sec-archive" class="section">
+        <div class="analytics-grid">
+            <div class="kpi-card"><div class="kpi-label">Всего оборот</div><div class="kpi-value" id="gTotal">0 ₴</div></div>
+            <div class="kpi-card"><div class="kpi-label">Чистая прибыль</div><div class="kpi-value" id="gNet" style="color:var(--green)">0 ₴</div></div>
+            <div class="kpi-card"><div class="kpi-label">Средний чек</div><div class="kpi-value" id="gAvg">0 ₴</div></div>
+            <div class="kpi-card"><div class="kpi-label">Всего проектов</div><div class="kpi-value" id="gCountAll">0</div></div>
+        </div>
+        <input type="text" class="search-bar" id="gSearch" placeholder="Поиск по архиву..." oninput="render()">
+        <div class="content-block">
+            <table>
+                <thead><tr><th>Дата</th><th>Проект</th><th>Сумма</th><th>Статус</th><th></th></tr></thead>
+                <tbody id="aTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="sec-add" class="section">
+        <div class="content-block">
+            <div class="premium-form">
+                <div class="input-group"><label>Дата начала</label><input type="date" id="pDate"></div>
+                <div class="input-group"><label>Дедлайн</label><input type="date" id="pDeadline"></div>
+                <div class="input-group" style="grid-column: span 2;"><label>Название / Артист</label><input type="text" id="pName" placeholder="Напр: Big Baby Tape - Mix"></div>
+                <div class="input-group"><label>Сумма ₴</label><input type="number" id="pTotal" placeholder="0"></div>
+                <div class="input-group"><label>Ассистент ₴</label><input type="number" id="pAssist" placeholder="0"></div>
+                <button class="btn-action" style="grid-column: span 2;" onclick="addProject()">Создать проект</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Подгружаем библиотеку IndexedDB (библиотеку не надо, сделаем нативно)
+    let projects = JSON.parse(localStorage.getItem('betov_db')) || [];
+    let fileHandle = null;
+    const months = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+
+    // При загрузке проверяем, был ли у нас файл раньше
+    window.onload = async () => {
+        document.getElementById('pDate').valueAsDate = new Date();
+        initSelectors();
+        render();
+        
+        // Пытаемся восстановить доступ к файлу из "быстрой памяти"
+        const savedHandle = await getSavedHandle();
+        if (savedHandle) {
+            document.getElementById('mainSyncBtn').innerText = "Подключить " + savedHandle.name;
+        }
+    };
+
+    // --- ФУНКЦИИ УМНОЙ ПАМЯТИ ---
+    async function saveHandleToMemory(handle) {
+        // Сохраняем "ссылку" на файл в системную базу браузера
+        const db = await openDB();
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(handle, 'last_file');
+    }
+
+    async function getSavedHandle() {
+        const db = await openDB();
+        return new Promise(res => {
+            const req = db.transaction('handles').objectStore('handles').get('last_file');
+            req.onsuccess = () => res(req.result);
+            req.onerror = () => res(null);
+        });
+    }
+
+    function openDB() {
+        return new Promise(res => {
+            const req = indexedDB.open('FileStore', 1);
+            req.onupgradeneeded = () => req.result.createObjectStore('handles');
+            req.onsuccess = () => res(req.result);
+        });
+    }
+
+    // --- ЛОГИКА СИНХРОНИЗАЦИИ ---
+    async function connectFile() {
+        try {
+            // Если в памяти есть ссылка, пытаемся открыть её сразу
+            const savedHandle = await getSavedHandle();
+            
+            if (savedHandle) {
+                // Просим разрешение на чтение/запись (это единственный клик)
+                if (await savedHandle.requestPermission({mode: 'readwrite'}) === 'granted') {
+                    fileHandle = savedHandle;
+                }
+            }
+
+            // Если ссылки нет или доступ не дали — открываем Finder
+            if (!fileHandle) {
+                [fileHandle] = await window.showOpenFilePicker({
+                    types: [{ description: 'JSON Database', accept: {'application/json': ['.json']} }],
+                    multiple: false
+                });
+                await saveHandleToMemory(fileHandle);
+            }
+
+            const file = await fileHandle.getFile();
+            const contents = await file.text();
+            if (contents) {
+                projects = JSON.parse(contents);
+                saveLocally();
+                render();
+            }
+
+            const status = document.getElementById('sync-status');
+            const btn = document.getElementById('mainSyncBtn');
+            status.innerText = "● База: " + fileHandle.name;
+            status.classList.add('active');
+            btn.innerText = "Обновить связь";
+            btn.classList.remove('btn-pulse');
+
+        } catch (e) { console.log("Отмена"); }
+    }
+
+    async function writeToFile() {
+        if (!fileHandle) return;
+        try {
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(projects, null, 2));
+            await writable.close();
+        } catch (e) { 
+            console.error("Ошибка записи:", e);
+            document.getElementById('sync-status').innerText = "Ошибка записи!";
+            document.getElementById('sync-status').classList.remove('active');
+            document.getElementById('mainSyncBtn').classList.add('btn-pulse');
+        }
+    }
+
+    function save() {
+        saveLocally();
+        writeToFile();
+    }
+
+    function saveLocally() {
+        localStorage.setItem('betov_db', JSON.stringify(projects));
+    }
+
+    // --- ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ ---
+    function initSelectors() {
+        const curY = new Date().getFullYear();
+        const curM = new Date().getMonth();
+        const fM = document.getElementById('fMonth');
+        const fY = document.getElementById('fYear');
+        const cM = document.getElementById('calMonthSel');
+        const cY = document.getElementById('calYearSel');
+        [fM, cM].forEach(s => { s.innerHTML = ''; months.forEach((m, i) => s.add(new Option(m, i))); });
+        [fY, cY].forEach(s => { s.innerHTML = ''; for(let y = curY - 1; y <= curY + 5; y++) s.add(new Option(y, y)); });
+        fM.value = curM; fY.value = curY; cM.value = curM; cY.value = curY;
+    }
+
+    function showTab(t) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('sec-' + t).classList.add('active');
+        document.getElementById('btn-' + t).classList.add('active');
+        if(t === 'calendar') renderCalendar();
+    }
+
+    function addProject() {
+        const name = document.getElementById('pName').value.trim();
+        if(!name) return;
+        projects.push({
+            id: Date.now(),
+            date: document.getElementById('pDate').value,
+            deadline: document.getElementById('pDeadline').value,
+            name: name,
+            total: Number(document.getElementById('pTotal').value) || 0,
+            assist: Number(document.getElementById('pAssist').value) || 0,
+            status: 'В работе'
+        });
+        save();
+        document.getElementById('pName').value = '';
+        render();
+        showTab('reports');
+    }
+
+    function render() {
+        const m = parseInt(document.getElementById('fMonth').value);
+        const y = document.getElementById('fYear').value;
+        const search = document.getElementById('gSearch').value.toLowerCase();
+        const sorted = [...projects].sort((a,b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+        const mTable = document.getElementById('mTableBody');
+        mTable.innerHTML = '';
+        let mT = 0, mA = 0, mC = 0;
+        sorted.filter(p => {
+            const d = new Date(p.date);
+            return d.getMonth() === m && d.getFullYear() == y;
+        }).forEach(p => {
+            mT += p.total; mA += p.assist; mC++;
+            const isLate = p.deadline && new Date(p.deadline) < new Date() && p.status !== 'Готово';
+            mTable.innerHTML += `<tr>
+                <td class="td-project"><span class="project-name" data-assist="${p.assist.toLocaleString()}">${p.name}</span></td>
+                <td class="td-price">${p.total.toLocaleString()} ₴</td>
+                <td class="td-deadline" style="color:${isLate ? 'var(--red)' : ''}">${p.deadline || '—'}</td>
+                <td>${getStatusDropdown(p)}</td>
+                <td><button onclick="del(${p.id})" class="btn-del">✖</button></td>
+            </tr>`;
+        });
+        document.getElementById('mTotal').innerText = mT.toLocaleString() + ' ₴';
+        document.getElementById('mAssist').innerText = mA.toLocaleString() + ' ₴';
+        document.getElementById('mProfit').innerText = (mT - mA).toLocaleString() + ' ₴';
+        document.getElementById('mCount').innerText = mC;
+        let gT = 0, gA = 0;
+        projects.forEach(p => { gT += p.total; gA += p.assist; });
+        document.getElementById('gTotal').innerText = gT.toLocaleString() + ' ₴';
+        document.getElementById('gNet').innerText = (gT - gA).toLocaleString() + ' ₴';
+        document.getElementById('gAvg').innerText = projects.length ? Math.round(gT/projects.length).toLocaleString() + ' ₴' : '0 ₴';
+        document.getElementById('gCountAll').innerText = projects.length;
+        const aTable = document.getElementById('aTableBody');
+        aTable.innerHTML = '';
+        sorted.filter(p => p.name.toLowerCase().includes(search)).forEach(p => {
+            aTable.innerHTML += `<tr>
+                <td style="color:var(--text-secondary)">${p.date}</td>
+                <td class="td-project"><span class="project-name" data-assist="${p.assist.toLocaleString()}">${p.name}</span></td>
+                <td class="td-price">${p.total.toLocaleString()} ₴</td>
+                <td>${getStatusDropdown(p)}</td>
+                <td><button onclick="del(${p.id})" class="btn-del">✖</button></td>
+            </tr>`;
+        });
+    }
+
+    function renderCalendar() {
+        const m = parseInt(document.getElementById('calMonthSel').value);
+        const y = parseInt(document.getElementById('calYearSel').value);
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+        const today = new Date();
+        const curDateStr = today.toISOString().split('T')[0];
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const offset = firstDay === 0 ? 6 : firstDay - 1;
+        for(let i=0; i<offset; i++) grid.innerHTML += `<div class="calendar-day" style="opacity:0"></div>`;
+        for(let d=1; d<=daysInMonth; d++) {
+            const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const isTodayClass = dateStr === curDateStr ? 'is-today' : '';
+            let html = `<div class="calendar-day ${isTodayClass}"><span class="day-num">${d}</span>`;
+            projects.forEach(p => {
+                let statusColor = 'var(--orange)'; if(p.status === 'Правки') statusColor = 'var(--red)'; if(p.status === 'Готово') statusColor = 'var(--green)';
+                if(p.date === dateStr) html += `<div class="event" style="background:${statusColor}; color:white">🚀 ${p.name}</div>`;
+                if(p.deadline === dateStr) html += `<div class="event" style="background:${statusColor}; color:white; border: 1.5px solid white">🔥 ${p.name}</div>`;
+            });
+            grid.innerHTML += html + `</div>`;
+        }
+    }
+
+    function getStatusDropdown(p) {
+        let color = 'var(--orange)'; if(p.status === 'Готово') color = 'var(--green)'; if(p.status === 'Правки') color = 'var(--red)';
+        return `<select onchange="updateSt(${p.id}, this.value)" class="status-select" style="color:${color}">
+            <option value="В работе" ${p.status==='В работе'?'selected':''}>В работе</option>
+            <option value="Правки" ${p.status==='Правки'?'selected':''}>Правки</option>
+            <option value="Готово" ${p.status==='Готово'?'selected':''}>Готово</option>
+        </select>`;
+    }
+
+    function updateSt(id, v) { const p = projects.find(x => x.id === id); if(p) { p.status = v; save(); render(); } }
+    function del(id) { if(confirm('Удалить?')) { projects = projects.filter(p => p.id !== id); save(); render(); if(document.getElementById('sec-calendar').classList.contains('active')) renderCalendar(); } }
+    function exportData() { const blob = new Blob([JSON.stringify(projects)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'betov_backup.json'; a.click(); }
+    function importData(e) { const r = new FileReader(); r.onload = (ev) => { projects = JSON.parse(ev.target.result); saveLocally(); render(); }; r.readAsText(e.target.files[0]); }
+</script>
+</body>
+</html>
